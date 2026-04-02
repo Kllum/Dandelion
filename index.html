@@ -327,10 +327,10 @@ function blow() {
 
   /* wish screen */
   setTimeout(function() {
-  wt1.style.animation = 'none';   /* cancela o fill-mode que travava opacity */
-  wt1.offsetHeight;               /* força reflow antes da transição */
+  var wt1 = document.getElementById('wt1');
+  wt1.style.animation = ''; // cancela qualquer keyframe
   wt1.style.transition = 'opacity 1.6s ease';
-  wt1.style.opacity = '0';
+  wt1.style.opacity = '0'; // agora vai sumir de fato
   setTimeout(function() {
     var wt2 = document.getElementById('wt2');
     if (wt2) {
