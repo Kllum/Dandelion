@@ -90,7 +90,7 @@ svg.main{width:310px;max-height:68vh;overflow:visible}
 
 <script>
 /* ═══════════════════════════════════════════
-   STEP 1 — phase helpers (must run first)
+   STEP 1 — phase helpers
 ═══════════════════════════════════════════ */
 var SCREENS = ['intro','start','scene','wish'];
 function showOnly(id) {
@@ -103,10 +103,9 @@ function showOnly(id) {
 }
 
 /* ═══════════════════════════════════════════
-   STEP 2 — timing  (set timers immediately)
+   STEP 2 — timing
 ═══════════════════════════════════════════ */
 var blown = false;
-
 showOnly('intro');
 setTimeout(function(){ showOnly('start'); }, 4000);
 setTimeout(function(){ showOnly('scene'); startMic(); }, 7500);
@@ -170,7 +169,7 @@ for (var li=0; li<LAYERS.length; li++) {
 }
 
 /* ═══════════════════════════════════════════
-   STEP 5 — build SVG (wrapped in try/catch)
+   STEP 5 — build SVG
 ═══════════════════════════════════════════ */
 var seedEls = [];
 try {
@@ -233,6 +232,7 @@ try {
     seedEls.push(g);
   }
 
+  /* dome — on top of seeds */
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+3,        rx:DRX+4,     ry:DRY*0.26, fill:'rgba(20,12,4,0.28)'}));
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY,           rx:DRX,       ry:DRY,      fill:'url(#df)'}));
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+DRY*0.68, rx:DRX*0.72,  ry:DRY*0.24, fill:'rgba(35,22,8,0.20)'}));
@@ -244,6 +244,36 @@ try {
     dsvg.appendChild(se('ellipse',{cx:dsx, cy:dsy, rx:'2.6', ry:'1.5', transform:'rotate('+(ds.angle*180/Math.PI+90)+','+dsx+','+dsy+')', fill:'rgba(18,10,2,0.26)'}));
   }
 
+  /* front seeds — on top of dome, facing the viewer */
+  var FCOUNT = 16;
+  for (var fi=0; fi<FCOUNT; fi++) {
+    var fa  = (fi/FCOUNT)*Math.PI*2 + (sr(fi*17+1)-0.5)*0.55;
+    var fr  = (sr(fi*17+2)*0.62 + 0.12) * DRX * 0.82;
+    var fsx = CX + Math.cos(fa) * fr * (DRX/DRY) * 0.88;
+    var fsy = CY + Math.sin(fa) * fr * 0.72;
+    var fang   = fa + (sr(fi*17+3)-0.5)*0.4 - 0.18;
+    var flen   = 9 + sr(fi*17+4)*9;
+    var fox    = fsx + Math.cos(fang)*flen;
+    var foy    = fsy + Math.sin(fang)*flen;
+    var fop    = 0.58 + sr(fi*17+5)*0.36;
+    var frays2 = 9;
+    var fspread2 = (70*Math.PI)/180;
+    var frl2   = 9 + sr(fi*17+6)*5;
+    var fg2 = se('g',{opacity:fop});
+    fg2.appendChild(se('line',{x1:fsx,y1:fsy,x2:fox,y2:foy,stroke:'rgba(255,255,255,0.38)','stroke-width':'0.65','stroke-linecap':'round'}));
+    fg2.appendChild(se('ellipse',{cx:fsx,cy:fsy,rx:'1.2',ry:'4',transform:'rotate('+(fang*180/Math.PI+90)+','+fsx+','+fsy+')',fill:'rgba(195,175,128,0.82)'}));
+    fg2.appendChild(se('circle',{cx:fsx,cy:fsy,r:'1.7',fill:'rgba(168,148,102,0.78)'}));
+    for (var fk=0; fk<frays2; fk++) {
+      var fra2 = fang - fspread2 + (fk/(frays2-1))*2*fspread2;
+      var ftx2 = fox + Math.cos(fra2)*frl2;
+      var fty2 = foy + Math.sin(fra2)*frl2;
+      fg2.appendChild(se('line',{x1:fox,y1:foy,x2:ftx2,y2:fty2,stroke:'rgba(255,255,255,0.60)','stroke-width':'0.48','stroke-linecap':'round'}));
+      fg2.appendChild(se('circle',{cx:ftx2,cy:fty2,r:'0.9',fill:'rgba(255,255,255,0.72)'}));
+    }
+    dsvg.appendChild(fg2);
+  }
+
+  /* tap to blow */
   dsvg.addEventListener('click', blow);
 
 } catch(e) {
@@ -251,7 +281,7 @@ try {
 }
 
 /* ═══════════════════════════════════════════
-   STEP 6 — wish seed (separate try/catch)
+   STEP 6 — wish seed
 ═══════════════════════════════════════════ */
 try {
   var wsvg = document.getElementById('wsvg');
