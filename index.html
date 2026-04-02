@@ -327,22 +327,19 @@ function blow() {
 
   /* wish screen */
   setTimeout(function() {
-    showOnly('wish');
-    var wt1 = document.getElementById('wt1');
-    if (wt1) {
-      wt1.style.animation = 'fade-in-up 2s ease-out .5s both';
-      wt1.style.opacity = '1';
-      setTimeout(function() {
-        wt1.style.transition = 'opacity 1.6s ease';
-        wt1.style.opacity = '0';
-        setTimeout(function() {
-          var wt2 = document.getElementById('wt2');
-          if (wt2) {
-            wt2.style.animation = 'fade-in-up 1.8s ease-out both';
-            wt2.style.opacity = '1';
-          }
-        }, 900);
-      }, 4200);
+  setTimeout(function() {
+  wt1.style.animation = 'none';   /* cancela o fill-mode que travava opacity */
+  wt1.offsetHeight;               /* força reflow antes da transição */
+  wt1.style.transition = 'opacity 1.6s ease';
+  wt1.style.opacity = '0';
+  setTimeout(function() {
+    var wt2 = document.getElementById('wt2');
+    if (wt2) {
+      wt2.style.animation = 'fade-in-up 1.8s ease-out both';
+      wt2.style.opacity = '1';
+    }
+  }, 900);
+}, 4200);
     }
   }, 4400);
 }
