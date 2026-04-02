@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dente de Leão</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  overflow:hidden;height:100vh;
+  font-family:'Georgia',serif;
+  background:linear-gradient(168deg,#08244e 0%,#162f6a 14%,#6b4e8a 37%,#b8643a 60%,#e09a58 76%,#eedbb0 100%);
+}
+.screen{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  transition:opacity 2.4s ease;
+}
+.off{opacity:0;pointer-events:none}
+p{
+  color:rgba(255,255,255,.92);
+  font-family:'Georgia',serif;font-style:italic;
+  text-shadow:0 1px 18px rgba(0,0,0,.55);
+  text-align:center;margin:0;
+}
+svg.main{width:310px;max-height:68vh;overflow:visible;will-change:transform}
+
+@keyframes fly-seed{
+  0%  {transform:translate(0,0) rotate(0deg);opacity:1}
+  10% {opacity:1}
+  80% {opacity:.15}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--dr));opacity:0}
+}
+.fly{animation:fly-seed 5.6s cubic-bezier(.12,.8,.32,1) forwards;will-change:transform,opacity}
+
+#wy{animation:drift-y 6s ease-in-out infinite;will-change:transform}
+#wx{animation:drift-x 4s ease-in-out infinite;will-change:transform}
+#wr{animation:drift-r 7s ease-in-out infinite;will-change:transform;filter:drop-shadow(0 0 10px rgba(255,255,255,.28))}
+@keyframes drift-y{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+@keyframes drift-x{0%,100%{transform:translateX(0)}30%{transform:translateX(13px)}70%{transform:translateX(-8px)}}
+@keyframes drift-r{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+
+.wish-txt{
+  font-size:19px;max-width:300px;line-height:1.9;letter-spacing:.05em;
+  position:absolute;bottom:calc(50% - 118px);padding:0 28px;
+  transition:opacity 1.8s ease;
+}
+@keyframes fade-in-up{
+  from{opacity:0;transform:translateY(14px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+#hint,#tap-hint{transition:opacity .25s ease}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" class="screen">
+  <p style="font-size:22px;line-height:1.85;letter-spacing:.06em;max-width:340px;padding:0 44px">
+    O instante frágil carrega a força de tudo que está por vir…
+  </p>
+</div>
+
+<!-- START -->
+<div id="start" class="screen off">
+  <p style="font-size:28px;letter-spacing:.06em">Achei no parque…</p>
+</div>
+
+<!-- SCENE -->
+<div id="scene" class="screen off" style="gap:8px">
+  <p id="hint" style="font-size:17px;letter-spacing:.08em;margin-bottom:4px;pointer-events:none">
+    Faça um desejo… assopre
+  </p>
+  <svg id="dsvg" class="main" viewBox="0 0 300 520" style="cursor:pointer"></svg>
+  <p id="tap-hint" style="font-size:12px;letter-spacing:.12em;opacity:.42;text-transform:uppercase;margin-top:2px;pointer-events:none">
+    ou toque na flor
+  </p>
+</div>
+
+<!-- WISH -->
+<div id="wish" class="screen off" style="gap:36px">
+  <div id="wy"><div id="wx"><div id="wr">
+    <svg id="wsvg" viewBox="0 0 120 180" style="width:84px;overflow:visible;will-change:transform"></svg>
+  </div></div></div>
+  <p id="wt1" class="wish-txt" style="opacity:0"></p>
+  <p id="wt2" class="wish-txt" style="opacity:0">O que será que esta semente lhe trará?</p>
+</div>
+
+<script>
+/* ── constants ── */
+const CX=150,CY=165,DRX=50,DRY=52;
+const NS='http://www.w3.org/2000/svg';
+const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSdwhlo8fdEGi7vjCGlY2FeBCBfhYdnQjgGCLKFCGgceTNnjGw/formResponse';
+
+const WISHES=[
+  "Cada semente carrega infinitas possibilidades.",
+  "O futuro está a um sopro...",
+  "Leve, frágil, pronta para florescer.",
+  "O sopro desperta sonhos adormecidos."
+  "Cada sopro carrega mundos invisíveis.",
+  "A esperança nasce em cada pequena semente.",
+  "Voar é apenas a primeira etapa do sonho.",
+  "O vento sabe os segredos que ainda não contamos.",
+  "As flores lembram que o tempo também é delicadeza.",
+  "O que se planta no silêncio, floresce em surpresa.. ",
+  "O instante de soltar é o momento de confiar.",
+  "Cada semente levada pelo vento é um desejo que viaja.",
+];
+
+/* ── helpers ── */
+function sr(n){const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function contact(a){return 1/Math.sqrt(Math.cos(a)**2/DRX**2+Math.sin(a)**2/DRY**2)}
+function svgEl(tag,a){const e=document.createElementNS(NS,tag);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e}
+
+/* ── seed data ── */
+const LAYERS=[{n:22,r:116,rays:13,rl:24,ah:7,op:1},{n:17,r:90,rays:11,rl:18,ah:6,op:.92},{n:11,r:70,rays:9,rl:13,ah:4.5,op:.82}];
+const SEEDS=[];let sid=0;
+for(const l of LAYERS){
+  for(let i=0;i<l.n;i++){
+    const spr=sr(sid*11+5);
+    const spreadDeg=spr>.42?80+spr*12:42+spr*65;
+    const bendRaw=sr(sid*11+6);
+    SEEDS.push({
+      id:sid,
+      angle:(i/l.n)*Math.PI*2+(sr(sid*11+1)-.5)*.40,
+      totalR:l.r+(sr(sid*11+2)-.5)*18,
+      rays:l.rays,rl:l.rl+(sr(sid*11+3)-.5)*5,
+      ah:l.ah,op:l.op*(.88+sr(sid*11+4)*.12),
+      spread:(spreadDeg*Math.PI)/180,
+      bend:bendRaw>.65?(bendRaw-.65)*38:0,
+      bendSide:sr(sid*11+7)>.5?1:-1,
+      dx:(sr(sid*7+0)-.28)*780,
+      dy:-(sr(sid*7+1)*540+220),
+      dr:(sr(sid*7+2)-.5)*980,
+      delay:sr(sid*7+3)*1.4,
+    });
+    sid++;
+  }
+}
+
+/* ── build dandelion ── */
+const dsvg=document.getElementById('dsvg');
+
+const defs=svgEl('defs',{});
+defs.innerHTML=`
+  <radialGradient id="df" cx="46%" cy="36%" r="64%">
+    <stop offset="0%"   stop-color="#d0c8bc"/>
+    <stop offset="48%"  stop-color="#b4aa9a"/>
+    <stop offset="82%"  stop-color="#9a9080"/>
+    <stop offset="100%" stop-color="#78706a"/>
+  </radialGradient>`;
+dsvg.appendChild(defs);
+
+dsvg.appendChild(svgEl('path',{d:'M150 520 C146 400 158 330 152 265 C148 230 162 205 156 185',stroke:'#286030','stroke-width':'7',fill:'none','stroke-linecap':'round'}));
+dsvg.appendChild(svgEl('path',{d:'M150 520 C146 400 158 330 152 265 C148 230 162 205 156 185',stroke:'#52a462','stroke-width':'3',fill:'none','stroke-linecap':'round',opacity:'.48'}));
+
+const LEAVES=[
+  {d:'M151 345 C146 342 138 337 129 332 C121 327 112 319 108 309 C105 300 107 291 112 287 C108 296 109 306 113 313 C118 320 123 325 129 329 C123 323 117 316 115 308 C116 318 120 326 126 331 C132 336 138 339 144 341 Z',f:'#2d7035',m:'M151 345 C140 339 124 330 110 312'},
+  {d:'M153 282 C157 279 164 274 172 268 C179 262 186 253 188 244 C190 235 187 228 183 226 C187 234 187 244 184 252 C181 259 176 265 171 269 C176 262 181 255 182 245 C180 253 177 261 171 267 C165 272 159 276 155 279 Z',f:'#2d7035',m:'M153 282 C163 275 176 263 184 244'},
+  {d:'M154 242 C150 240 143 235 136 230 C129 225 122 217 119 209 C117 201 119 194 124 192 C120 200 121 209 125 216 C129 223 134 228 139 232 C133 226 128 218 127 210 C128 218 132 225 138 230 C143 235 149 240 152 242 Z',f:'#267030',m:'M154 242 C143 235 129 224 121 207'},
+];
+for(const lf of LEAVES){
+  dsvg.appendChild(svgEl('path',{d:lf.d,fill:lf.f}));
+  dsvg.appendChild(svgEl('path',{d:lf.m,stroke:'#1e5028','stroke-width':'1',fill:'none',opacity:'.55'}));
+}
+
+dsvg.appendChild(svgEl('ellipse',{cx:CX,cy:CY+DRY*.62,rx:DRX*.56,ry:DRY*.24,fill:'#3a5c24'}));
+dsvg.appendChild(svgEl('ellipse',{cx:CX,cy:CY+DRY*.54,rx:DRX*.46,ry:DRY*.18,fill:'#527535'}));
+
+const seedEls=[];
+for(const s of SEEDS){
+  const cR=contact(s.angle);
+  const ix=CX+Math.cos(s.angle)*cR, iy=CY+Math.sin(s.angle)*cR;
+  const ox=CX+Math.cos(s.angle)*s.totalR, oy=CY+Math.sin(s.angle)*s.totalR;
+  const ax=ix+Math.cos(s.angle)*3.5, ay=iy+Math.sin(s.angle)*3.5;
+  const aDeg=s.angle*180/Math.PI+90;
+
+  let stalkD;
+  if(s.bend>.5){
+    const mx=(ix+ox)/2, my=(iy+oy)/2;
+    stalkD=`M${ix},${iy} Q${mx-Math.sin(s.angle)*s.bend*s.bendSide},${my+Math.cos(s.angle)*s.bend*s.bendSide} ${ox},${oy}`;
+  } else {
+    stalkD=`M${ix},${iy} L${ox},${oy}`;
+  }
+
+  const g=svgEl('g',{opacity:s.op});
+  g.appendChild(svgEl('path',{d:stalkD,stroke:'rgba(255,255,255,0.42)','stroke-width':'.7',fill:'none','stroke-linecap':'round'}));
+  g.appendChild(svgEl('ellipse',{cx:ax,cy:ay,rx:'1.5',ry:s.ah/2,transform:`rotate(${aDeg},${ax},${ay})`,fill:'rgba(200,182,140,0.88)'}));
+  g.appendChild(svgEl('circle',{cx:ax,cy:ay,r:'2.2',fill:'rgba(175,158,112,0.80)'}));
+  for(let k=0;k<s.rays;k++){
+    const ra=s.angle-s.spread+(k/(s.rays-1))*2*s.spread;
+    const tx=ox+Math.cos(ra)*s.rl, ty=oy+Math.sin(ra)*s.rl;
+    g.appendChild(svgEl('line',{x1:ox,y1:oy,x2:tx,y2:ty,stroke:'rgba(255,255,255,0.72)','stroke-width':'.52','stroke-linecap':'round'}));
+    g.appendChild(svgEl('circle',{cx:tx,cy:ty,r:'1.15',fill:'rgba(255,255,255,0.82)'}));
+  }
+  dsvg.appendChild(g);
+  seedEls.push(g);
+}
+
+/* dome */
+dsvg.appendChild(svgEl('ellipse',{cx:CX,cy:CY+3,rx:DRX+4,ry:DRY*.26,fill:'rgba(20,12,4,0.28)'}));
+dsvg.appendChild(svgEl('ellipse',{cx:CX,cy:CY,rx:DRX,ry:DRY,fill:'url(#df)'}));
+dsvg.appendChild(svgEl('ellipse',{cx:CX,cy:CY+DRY*.68,rx:DRX*.72,ry:DRY*.24,fill:'rgba(35,22,8,0.20)'}));
+dsvg.appendChild(svgEl('ellipse',{cx:CX-11,cy:CY-15,rx:'15',ry:'9',fill:'rgba(255,255,255,0.07)'}));
+for(const s of SEEDS){
+  const cR=contact(s.angle);
+  const sx=CX+Math.cos(s.angle)*(cR-3), sy=CY+Math.sin(s.angle)*(cR-3);
+  dsvg.appendChild(svgEl('ellipse',{cx:sx,cy:sy,rx:'2.6',ry:'1.5',transform:`rotate(${s.angle*180/Math.PI+90},${sx},${sy})`,fill:'rgba(18,10,2,0.26)'}));
+}
+
+/* ── wish seed ── */
+const wsvg=document.getElementById('wsvg');
+const wa=-Math.PI/2-.08, wix=60, wiy=105;
+const wox=wix+Math.cos(wa)*82, woy=wiy+Math.sin(wa)*82;
+const wsp=(90*Math.PI)/180, wrl=32;
+wsvg.appendChild(svgEl('line',{x1:wix,y1:wiy,x2:wox,y2:woy,stroke:'rgba(255,255,255,.58)','stroke-width':'1','stroke-linecap':'round'}));
+wsvg.appendChild(svgEl('ellipse',{cx:wix,cy:wiy-5,rx:'2.2',ry:'8',fill:'rgba(210,192,148,0.90)'}));
+wsvg.appendChild(svgEl('circle',{cx:wix,cy:wiy,r:'3.5',fill:'rgba(185,166,118,0.82)'}));
+for(let k=0;k<14;k++){
+  const ra=wa-wsp+(k/13)*2*wsp;
+  const tx=wox+Math.cos(ra)*wrl, ty=woy+Math.sin(ra)*wrl;
+  wsvg.appendChild(svgEl('line',{x1:wox,y1:woy,x2:tx,y2:ty,stroke:'rgba(255,255,255,.78)','stroke-width':'.65','stroke-linecap':'round'}));
+  wsvg.appendChild(svgEl('circle',{cx:tx,cy:ty,r:'1.5',fill:'rgba(255,255,255,.86)'}));
+}
+
+/* ── pick random wish text ── */
+document.getElementById('wt1').textContent=WISHES[Math.floor(Math.random()*WISHES.length)];
+
+/* ── phase logic ── */
+function showOnly(id){
+  ['intro','start','scene','wish'].forEach(s=>{
+    document.getElementById(s).classList.toggle('off',s!==id);
+  });
+}
+
+let blown=false;
+showOnly('intro');
+setTimeout(()=>showOnly('start'),4000);
+setTimeout(()=>{showOnly('scene');startMic();},7500);
+
+/* tap-to-blow */
+document.getElementById('dsvg').addEventListener('click',blow);
+
+async function startMic(){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ctx=new AudioContext();
+    const src=ctx.createMediaStreamSource(stream);
+    const an=ctx.createAnalyser();an.fftSize=256;
+    src.connect(an);
+    const data=new Uint8Array(an.frequencyBinCount);
+    (function detect(){an.getByteFrequencyData(data);if(data.reduce((a,b)=>a+b)/data.length>55)blow();requestAnimationFrame(detect);})();
+  }catch(e){}
+}
+
+function blow(){
+  if(blown)return;blown=true;
+
+  /* hide hint immediately */
+  document.getElementById('hint').style.opacity='0';
+  document.getElementById('tap-hint').style.opacity='0';
+  document.getElementById('dsvg').style.cursor='default';
+
+  /* fly seeds */
+  for(let i=0;i<seedEls.length;i++){
+    const s=SEEDS[i],g=seedEls[i];
+    g.style.setProperty('--dx',s.dx+'px');
+    g.style.setProperty('--dy',s.dy+'px');
+    g.style.setProperty('--dr',s.dr+'deg');
+    g.style.animationDelay=s.delay+'s';
+    g.classList.add('fly');
+  }
+
+  /* tracking */
+  fetch(FORM_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({'entry.1196602189':'Jornada concluída!'}).toString()}).catch(()=>{});
+  fetch('https://a205851a-8eed-42af-8612-b6779a6b3e58-00-1lhi3a6iwiofq.picard.replit.dev/api/sinal',{method:'POST'}).catch(()=>{});
+
+  /* wish screen */
+  setTimeout(()=>{
+    showOnly('wish');
+    const wt1=document.getElementById('wt1');
+    wt1.style.opacity='1';
+    wt1.style.animation='fade-in-up 2s ease-out .5s both';
+    setTimeout(()=>{
+      wt1.style.transition='opacity 1.6s ease';
+      wt1.style.opacity='0';
+      setTimeout(()=>{
+        const wt2=document.getElementById('wt2');
+        wt2.style.animation='fade-in-up 1.8s ease-out both';
+        wt2.style.opacity='1';
+      },900);
+    },4200);
+  },4400);
+}
+</script>
+</body>
+</html>
