@@ -45,7 +45,7 @@ svg.main{width:310px;max-height:68vh;overflow:visible}
 .wish-txt{
   font-size:19px;max-width:300px;line-height:1.9;letter-spacing:.05em;
   position:absolute;bottom:calc(50% - 118px);padding:0 28px;
-  transition:opacity 1.8s ease;
+  transition:opacity 1.6s ease;
 }
 @keyframes fade-in-up{
   from{opacity:0;transform:translateY(14px)}
@@ -84,7 +84,7 @@ svg.main{width:310px;max-height:68vh;overflow:visible}
     <svg id="wsvg" viewBox="0 0 120 180" style="width:84px;overflow:visible"></svg>
   </div></div></div>
   <p id="wt1" class="wish-txt" style="opacity:0"></p>
-  <p id="wt2" class="wish-txt" style="opacity:0">O que será que esta semente lhe trará?</p>
+  <p id="wt2" class="wish-txt" style="opacity:0">O que esta semente lhe trará?</p>
 </div>
 
 <script>
@@ -175,7 +175,6 @@ var seedEls = [];
 try {
   var dsvg = document.getElementById('dsvg');
 
-  /* gradient via createElementNS (safer than innerHTML in SVG) */
   var defs = se('defs', {});
   var grad = se('radialGradient', {id:'df', cx:'46%', cy:'36%', r:'64%'});
   var stops = [
@@ -188,12 +187,10 @@ try {
   defs.appendChild(grad);
   dsvg.appendChild(defs);
 
-  /* stem */
   var stemD = 'M150 520 C146 400 158 330 152 265 C148 230 162 205 156 185';
   dsvg.appendChild(se('path',{d:stemD, stroke:'#286030','stroke-width':'7', fill:'none','stroke-linecap':'round'}));
   dsvg.appendChild(se('path',{d:stemD, stroke:'#52a462','stroke-width':'3', fill:'none','stroke-linecap':'round', opacity:'0.48'}));
 
-  /* leaves */
   var LEAVES = [
     {d:'M151 345 C146 342 138 337 129 332 C121 327 112 319 108 309 C105 300 107 291 112 287 C108 296 109 306 113 313 C118 320 123 325 129 329 C123 323 117 316 115 308 C116 318 120 326 126 331 C132 336 138 339 144 341 Z', f:'#2d7035', m:'M151 345 C140 339 124 330 110 312'},
     {d:'M153 282 C157 279 164 274 172 268 C179 262 186 253 188 244 C190 235 187 228 183 226 C187 234 187 244 184 252 C181 259 176 265 171 269 C176 262 181 255 182 245 C180 253 177 261 171 267 C165 272 159 276 155 279 Z', f:'#2d7035', m:'M153 282 C163 275 176 263 184 244'},
@@ -204,11 +201,9 @@ try {
     dsvg.appendChild(se('path',{d:LEAVES[lfi].m, stroke:'#1e5028','stroke-width':'1', fill:'none', opacity:'0.55'}));
   }
 
-  /* calyx base */
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+DRY*0.62, rx:DRX*0.56, ry:DRY*0.24, fill:'#3a5c24'}));
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+DRY*0.54, rx:DRX*0.46, ry:DRY*0.18, fill:'#527535'}));
 
-  /* seeds */
   for (var si2=0; si2<SEEDS.length; si2++) {
     var s = SEEDS[si2];
     var cR = contact(s.angle);
@@ -237,7 +232,6 @@ try {
     seedEls.push(g);
   }
 
-  /* dome — on top of seeds */
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+3,        rx:DRX+4,     ry:DRY*0.26, fill:'rgba(20,12,4,0.28)'}));
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY,           rx:DRX,       ry:DRY,      fill:'url(#df)'}));
   dsvg.appendChild(se('ellipse',{cx:CX, cy:CY+DRY*0.68, rx:DRX*0.72,  ry:DRY*0.24, fill:'rgba(35,22,8,0.20)'}));
@@ -249,11 +243,9 @@ try {
     dsvg.appendChild(se('ellipse',{cx:dsx, cy:dsy, rx:'2.6', ry:'1.5', transform:'rotate('+(ds.angle*180/Math.PI+90)+','+dsx+','+dsy+')', fill:'rgba(18,10,2,0.26)'}));
   }
 
-  /* tap to blow */
   dsvg.addEventListener('click', blow);
 
 } catch(e) {
-  /* SVG build failed — page still transitions, just without the flower */
   console.warn('SVG build error:', e);
 }
 
@@ -300,7 +292,6 @@ function blow() {
   if (blown) return;
   blown = true;
 
-  /* hide hint immediately */
   var h = document.getElementById('hint');
   var th = document.getElementById('tap-hint');
   if (h)  h.style.opacity  = '0';
@@ -308,7 +299,6 @@ function blow() {
   var ds = document.getElementById('dsvg');
   if (ds) ds.style.cursor = 'default';
 
-  /* fly seeds */
   for (var i=0; i<seedEls.length; i++) {
     var g = seedEls[i], s = SEEDS[i];
     g.style.setProperty('--dx', s.dx+'px');
@@ -318,27 +308,28 @@ function blow() {
     g.classList.add('fly');
   }
 
-  /* tracking */
   try {
     var body = 'entry.1196602189='+encodeURIComponent('Jornada conclu\u00edda!');
     fetch(FORM_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body}).catch(function(){});
     fetch('https://a205851a-8eed-42af-8612-b6779a6b3e58-00-1lhi3a6iwiofq.picard.replit.dev/api/sinal', {method:'POST'}).catch(function(){});
   } catch(e) {}
 
-  /* wish screen */
   setTimeout(function() {
-  wt1.style.animation = 'none';   /* cancela o fill-mode que travava opacity */
-  wt1.offsetHeight;               /* força reflow antes da transição */
-  wt1.style.transition = 'opacity 1.6s ease';
-  wt1.style.opacity = '0';
-  setTimeout(function() {
+    showOnly('wish');
+    var wt1 = document.getElementById('wt1');
     var wt2 = document.getElementById('wt2');
-    if (wt2) {
-      wt2.style.animation = 'fade-in-up 1.8s ease-out both';
-      wt2.style.opacity = '1';
-    }
-  }, 900);
-}, 4200);
+    if (wt1) {
+      wt1.style.animation = 'fade-in-up 2s ease-out .5s both';
+      wt1.style.opacity = '1';
+      setTimeout(function() {
+        wt1.style.opacity = '0';
+        setTimeout(function() {
+          if (wt2) {
+            wt2.style.animation = 'fade-in-up 1.8s ease-out both';
+            wt2.style.opacity = '1';
+          }
+        }, 1700);
+      }, 4200);
     }
   }, 4400);
 }
