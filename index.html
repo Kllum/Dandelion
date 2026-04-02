@@ -51,6 +51,7 @@ svg.main{width:310px;max-height:68vh;overflow:visible}
   from{opacity:0;transform:translateY(14px)}
   to  {opacity:1;transform:translateY(0)}
 }
+.do-fade-in{animation:fade-in-up 2s ease-out both}
 </style>
 </head>
 <body>
@@ -319,13 +320,14 @@ function blow() {
     var wt1 = document.getElementById('wt1');
     var wt2 = document.getElementById('wt2');
     if (wt1) {
-      wt1.style.animation = 'fade-in-up 2s ease-out .5s both';
+      wt1.classList.add('do-fade-in');
       wt1.style.opacity = '1';
       setTimeout(function() {
+        wt1.classList.remove('do-fade-in');
         wt1.style.opacity = '0';
         setTimeout(function() {
           if (wt2) {
-            wt2.style.animation = 'fade-in-up 1.8s ease-out both';
+            wt2.classList.add('do-fade-in');
             wt2.style.opacity = '1';
           }
         }, 1700);
